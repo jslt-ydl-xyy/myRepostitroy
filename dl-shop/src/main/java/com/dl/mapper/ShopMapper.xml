@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+  <mapper namespace="com.dl.mapper.ShopMapper">
+  		<resultMap type="shop" id="shopResult">
+  			<id column="sid" property="sid"/>
+  			<result column="sname" property="sname"/>
+  			<result column="createtime" property="createtime"/>
+  			<collection property="list" javaType="list" ofType="item" select="selItem" column="sid">
+  				<id column="iid" property="iid"/>
+  				<result column="iname" property="iname"/>
+  			</collection>
+  		</resultMap>
+  			
+  		<select id="selAll" resultMap="shopResult" parameterType="shopvo">
+  			select s.* from a_shop s,a_middle m,a_item i
+  			<where>
+  				 m.sid=s.sid and m.iid=i.iid
+  				<if test="sname != null">
+  					and	s.sname like '%${sname}%'
+  				</if>
+  				<if test="sid != 0">
+  					and s.sid = ${sid}
+  				</if>
+  				<if test="iids != null">
+  					<foreach collection="iids" item="i" open="and i.iid in(" separator="," close=")">
+  						${i}
+  					</foreach>
+  				</if>
+  				GROUP BY s.sname
+  			</where>
+  		</select>
+  		<select id="selItem" parameterType="int" resultType="item">
+  			select * from a_item where iid in(select m.iid from a_shop s,a_middle m where s.sid=${value} and m.sid=s.sid)
+  		</select>
+  		
+  		<insert id="addShop" parameterType="shopvo">
+  			<selectKey keyColumn="sid" keyProperty="sid" resultType="int" order="AFTER">
+  				select LAST_INSERT_ID()
+  			</selectKey>
+  			insert into a_shop values(default,#{sname},#{createtime})
+  		</insert>
+  		<insert id="addMiddle" parameterType="middle">
+  			insert into a_middle
+  			<foreach collection="iids" item="i" open="values" separator=",">
+  				(default,${sid},${i})
+  			</foreach>
+  		</insert>
+  		<delete id="del" parameterType="shopvo">
+  			delete from a_shop
+  			<where>
+  				
+  				<foreach collection="ids" item="i" open="sid in(" separator="," close=")">
+  				
+  				${i}
+  				</foreach>
+  			
+  			</where>
+  		
+  		</delete>
+  </mapper>
